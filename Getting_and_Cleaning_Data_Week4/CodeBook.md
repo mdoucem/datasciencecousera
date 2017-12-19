@@ -5,7 +5,7 @@ Codebook describing the variable shown in the tidy data set tidydata.txt. Have a
 In total, there are 180 observations in the dataset.
 
 Each observation consists of:
-1. ActivityId which is a factor with the following labels
+* ActivityId which is a factor with the following labels
 - Walking
 - Walking_upstairs
 - walking_downstairs
@@ -13,9 +13,9 @@ Each observation consists of:
 - standing
 - laying
 
-2. Subject id
+* Subject id
 
-3. Remaining 79 variables, gives the average of that variable for each activity and each subject. These variables are:
+* Remaining 79 variables, gives the average of that variable for each activity and each subject. These variables are:
 
 1.	tBodyAcc-mean()-X	
 2.	tBodyAcc-mean()-Y	
