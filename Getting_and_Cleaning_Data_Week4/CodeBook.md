@@ -6,14 +6,14 @@ In total, there are 180 observations in the dataset.
 
 Each observation consists of:
 * ActivityId which is a factor with the following labels
-- Walking
-- Walking_upstairs
-- walking_downstairs
-- sitting
-- standing
-- laying
+	* Walking
+	* Walking_upstairs
+	* walking_downstairs
+	* Sitting
+	* Standing
+	* Laying
 
-* Subject id
+* SubjectId
 
 * Remaining 79 variables, gives the average of that variable for each activity and each subject. These variables are:
 
