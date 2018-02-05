@@ -1,0 +1,202 @@
+---
+title: "Practical Machine Learning Course Project"
+author: "mdoucem"
+date: "31 January 2018"
+output:
+  html_document:
+    keep_md: true
+---
+## Overview
+One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In the following, we will use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants to predict the manner in which the exercises were done.
+
+## Let's load first the necessary libraries
+```{r}
+library(ggplot2)
+library(caret)
+library(knitr)
+library(rmarkdown)
+library(corrplot)
+library(mlbench)
+```
+
+## Download the data
+We use data collected from devices such as Jawbone Up, Nike FuelBand, and Fitbit. The data has been divided into a training
+set and a test set.
+
+We first dowload the data
+```{r}
+train_url<-"https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+test_url<-"https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+
+train_des<-"train_set.csv"
+test_des<-"test_set.csv"
+
+if (!file.exists(train_des) & !file.exists(test_des)){
+  trainfile<-download.file(train_url, train_des, method = "libcurl")
+  testfile<-download.file(test_url, test_des, method = "libcurl")
+}
+```
+
+After downloading the data, we then read in the data for exploration and analysis.
+
+## Read in the data
+```{r}
+trainset<-read.csv("train_set.csv", sep = ",", stringsAsFactors = FALSE, na.strings = c("NA","#DIV/0!",""))
+testset<-read.csv("test_set.csv", sep = ",", stringsAsFactors = FALSE, na.strings = c("NA","#DIV/0!",""))
+
+```
+
+Let us look at how this data looks like:
+```{r}
+dim(trainset)
+```
+
+The training set has 19,622 observations and 160 variables, while
+```{r}
+dim(testset)
+```
+The test set has 20 observations and 160 variables
+
+
+## Cleaning the data
+When looking at the data, e.g., use str(trainset). We see that the datasets have a lot of observations that are zero or missing. Thus we have to deal with them in some way.
+
+Let us first see how many missing values are in the training set
+```{r}
+sum(is.na(trainset)) # there are a total of 1925102 missing values
+```
+
+We deal with these values in two ways: First using nearZeroVar function to deal with those variables that near zero variance. Secondly, remiving the NA values.
+
+```{r}
+zero_values<-nearZeroVar(trainset, saveMetrics = TRUE)
+trainset<-trainset[, -unlist(zero_values)]
+testset<-testset[, -unlist(zero_values)]
+```
+
+Let us look at the result of that
+```{r}
+dim(trainset)  #19,622 * 127
+dim(testset) #20 * 127
+```
+
+Looking at the dimensions, we see that the number of variables is now 127 for both the train and test sets.
+
+```{r}
+missing_values<-sapply(trainset, function(x) mean(is.na(x))) >0.95
+trainset<-trainset[, missing_values == FALSE]
+testset<-testset[, missing_values == FALSE]
+```
+
+The result of removing missing values is that the 
+```{r}
+dim(trainset) #19,622 * 44
+dim(testset) #20 * 44
+```
+
+The number of variable for both the train and test are now 44.
+
+
+## Analysis of the Training set
+
+First, we look at the correlation between the variables
+```{r}
+corMatrix <- cor(trainset[,-44]) # remove the predictor column
+corrplot(corMatrix, order = "FPC", method = "color", type = "lower",
+         tl.cex = 0.8, tl.col = rgb(0,0,0)) # plot a correlation matrix
+```
+
+The highly correlated variables are shown in dark colors in the graph above. Since there are no strong correlations between variables, we do not need to perform PCA or SVD.
+
+
+Since we do not have to remove any variables. I then split the training set into a train and validation set as follows:
+```{r}
+inTrain<-createDataPartition(trainset$classe, p =0.8, list = FALSE)
+
+training<-trainset[inTrain,]
+validation<-trainset[-inTrain,]
+```
+
+
+## Predictive Modelling
+The goal of the task is to build a good predictive model for the 'classe' variable.
+
+For this task, I test 5 different algorithms, that are commonly used in machine learning tasks, and select the best performing one. In addition, I train the algorithms using 10-fold cross validation. Since the data set is large enough, 10-fold cross validation is good and reduces the chances of overfitting.
+```{r}
+control<-trainControl(method = "cv", number=10)
+metric<-"Accuracy"
+```
+
+
+### Build the models
+```{r}
+# 1. LDA
+set.seed(7) # should test different seeds as well
+fit.lda<-train(as.factor(classe)~., data = training, method="lda", metric=metric, trControl=control)
+
+# 2. CART
+set.seed(7)
+fit.cart<-train(as.factor(classe)~., data = training, method="rpart", metric=metric, trControl=control)
+
+# 3. kNN
+set.seed(7)
+fit.knn<-train(as.factor(classe)~., data = training, method="knn", metric=metric, trControl=control)
+
+# 4. SVM
+set.seed(7)
+fit.svm<-train(as.factor(classe)~., data = training, method="svmRadial", metric=metric, trControl=control)
+
+# 5. Random Forest
+set.seed(7)
+fit.rf<-train(as.factor(classe)~., data = training, method="rf", metric=metric, trControl=control)
+```
+
+### Select the best model
+```{r}
+results<-resamples(list(lda=fit.lda, cart=fit.cart, knn=fit.knn,
+                        svm=fit.svm, rf=fit.rf))
+summary(results) # This plots the accuracy and kappa values of all the models
+```
+From the results, we see the performance of all the five algorightms. From these results, we particularly see that the random forest algorithm has the best performance, with SVM coming in second. 
+
+These results can also be seen visually in the below figure.
+```{r}
+dotplot(results) 
+```
+
+I use the best two performing algorithms and test them on the validation set
+```{r}
+predictionsRf<-predict(fit.rf, validation)
+predictionsSvm<-predict(fit.svm, validation)
+```
+
+With the following results:
+```{r}
+cmtrx1<-confusionMatrix(predictionsRf, validation$classe)
+cmtrx1
+```
+
+```{r}
+cmtrx2<-confusionMatrix(predictionsSvm, validation$classe)
+cmtrx2
+```
+
+From the above confusion matrix, we see that the Random Forest algorithm still has the best performance and is the one that is selected for predicting the 'classe' values for the test set.
+
+In particular, it is good to see which variables have the most predictive power. Using the mlbench package, I find this out.
+```{r}
+importance<-varImp(fit.rf, scale = FALSE)
+print(importance)
+```
+
+```{r}
+plot(importance)
+```
+
+## Predicting the test set
+Using the fit.rf model, we get the following:
+```{r}
+testpredictions<-predict(fit.rf, testset)
+testpredictions
+```
+
