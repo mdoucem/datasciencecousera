@@ -13,5 +13,6 @@ Explore the data and predict the "classe" variable in the training set, which co
 
 ### Reporting (gh-pages)
 The reporting of the analysis and prediction model is done in two files under two branches:
-Master branch includes the R markdown file, .Rmd as well as the .html file
-gh-pages branch specifically contains the HTML files -> https://github.com/mdoucem/datasciencecousera/tree/gh-pages
+- Master branch includes the R markdown file, .Rmd as well as the .html files
+
+- gh-pages branch specifically contains the HTML files -> https://github.com/mdoucem/datasciencecousera/tree/gh-pages
