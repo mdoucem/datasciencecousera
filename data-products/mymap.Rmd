@@ -1,0 +1,38 @@
+---
+title: "myLeafletMap - R Markdown and Leaflet Assignment 1"
+author: "mdoucem"
+date: "Created on 6 February 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Map showing all the countries where I have stayed for at least five months.
+
+Below is a map showing markers of countries. When you click on each marker, you will see the name of the country as well as the length of the stay, as a range.
+
+```{r echo=FALSE}
+df<-data.frame(Latitude = c(-1.9403, -6.3690, 0.1768696, -22.967062, 61.9241), 
+               Longitude = c(29.8739, 34.8888, 37.9062, 18.4929993, 25.7482),
+               Labels = c("<b>Rwanda</b> <br/> 5-10 years", 
+                          "<b>Tanzania</b> <br/> 0-1 years",
+                          "<b>Kenya</b> <br/> 0-5 years",
+                          "<b>Namibia</b> <br/> 10-15 years",
+                          "<b>Finland</b> <br/> 10-15 years"))
+
+```
+
+
+```{r map, echo=FALSE}
+mymap<- df %>% 
+  leaflet() %>%
+  addTiles() %>%
+  addMarkers(lat = ~Latitude, lng = ~Longitude, popup = df$Labels)
+
+```
+```{r echo=FALSE}
+mymap
+```
+
